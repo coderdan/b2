@@ -48,13 +48,21 @@ class B2
     end
   
     def keys(prefix: nil, delimiter: nil)
-      #TODO: add abilty to get all names
-      @connection.post('/b2api/v2/b2_list_file_names', {
-        bucketId: @id,
-        maxFileCount: 1000,
-        prefix: prefix,
-        delimiter: delimiter
-      })['files'].map{ |f| f['fileName'] }
+      next_file = ""
+
+      begin
+        response = @connection.post('/b2api/v2/b2_list_file_names', {
+          bucketId: @id,
+          maxFileCount: 1000,
+          prefix: prefix,
+          delimiter: delimiter,
+          startFileName: next_file
+        })
+        filenames = response['files'].map do |file|
+          yield file['fileName'] if block_given?
+        end
+        next_file = response['nextFileName']
+      end while !filenames.empty?
     end
     
     def has_key?(key)

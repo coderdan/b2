@@ -100,14 +100,14 @@ class B2
       conn = Net::HTTP.new(uri.host, uri.port)
       conn.use_ssl = uri.scheme == 'https'
 
-      req = Net::HTTP::Get.new("/file/#{bucket}/#{key}")
+      req = Net::HTTP::Get.new("/file/#{bucket}/#{URI.escape(key)}")
       req['Authorization'] = authorization_token
       conn.start do |http|
         http.request(req) do |response|
           case response
           when Net::HTTPSuccess
             response.read_body do |chunk|
-              digestor << chunk
+              digestor << chunk if response['X-Bz-Content-Sha1'] != 'none'
               if to
                 to << chunk
               elsif block_given?
